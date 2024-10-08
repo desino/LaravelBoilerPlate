@@ -1,0 +1,30 @@
+{
+    "name": "desino/boilerplate",
+    "description": "Desino customized in-house boilerplate for laravel applications.",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Desino",
+            "email": "india@desino.be"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^11.9",
+        "laravel/tinker": "^2.9"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Desino\\Boilerplate\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Desino\\Boilerplate\\BoilerplateServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable"
+}

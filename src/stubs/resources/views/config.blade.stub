@@ -1,0 +1,72 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="row g-0 align-items-center">
+    <div class="col-12">
+        <form action="{{ route('appconfig.config') }}" class="needs-validation" method="POST" novalidate name="appconfig_config_form" id="appconfig_config_form">
+            @csrf
+            <div class="card border-0 pt-3">
+                <div class="card-header bg-transparent border-0 row d-flex align-items-center p-0">
+                    <div class="col-12 col-md-9 col-lg-10">
+                        <h1 class="text-app_dblue">
+                            {{ $page_title }}
+                        </h1>
+                        <div class="my-2 small fst-italic clearfix text-app_lblue">
+                            {!! __('messages.appconfig_config_page_desc') !!}
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-3 col-lg-2">
+                        <a class="btn btn-dark border-0 w-100" href="{{route('home')}}" role="button" >
+                            <i class="fa-solid fa-xmark"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body border-0 px-0">
+                    <div class="w-100">
+                        <div class="card border-0">
+                            <div class="card-header bg-app_lblue border-0 text-center">
+                                <h5 class="text-white m-0 fw-bold">
+                                    {{ __('messages.appconfig_form_section_items_per_page_title') }}
+                                </h5>
+                            </div>
+                            <div class="card-body border-0 px-0">
+                                <div class="row w-100">
+                                    <div class="col-12 col-md-3 col-lg-3 col-xl-2 mb-3">
+                                        <label for="items_per_page_users" class="fw-bold form-label">
+                                            {{ __('messages.appconfig_form_field_items_per_page_users') }}
+                                        </label>
+                                        <input class="form-control @error('items_per_page_users'){{ 'is-invalid' }}@enderror" type="text" name="items_per_page_users" id="items_per_page_users"
+                                            value="{{ $config['items_per_page_users'] }}" />
+                                        @error('items_per_page_users')
+                                            <small class="invalid-feedback fw-bold fst-italic text-danger" role="alert">{{ $message }}</small>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card border-0">
+                            <div class="card-header bg-app_lblue border-0 text-center">
+                                <h5 class="text-white m-0 fw-bold">
+                                    {{ __('messages.appconfig_form_section_other_title') }}
+                                </h5>
+                            </div>
+                            <div class="card-body border-0 px-0">
+                                <div class="row w-100">
+                                    <div class="col-12 col-md-12 col-lg-6 mb-3">
+                                        
+                                     </div>
+                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent p-0">
+                    <button class="btn btn-app_dblue fw-bold border-0 text-white w-100" type="submit" style="outline: none;">
+                        {{ __('messages.appconfig_config_form_submit_btn_text') }}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+@endsection

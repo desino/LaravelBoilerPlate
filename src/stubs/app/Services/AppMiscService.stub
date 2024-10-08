@@ -1,0 +1,228 @@
+<?php
+
+namespace App\Services;
+
+use League\Csv\Writer;
+use App\Models\AppConfig;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
+
+class AppMiscService
+{
+    /**
+     * A function to add redirect message to session, to be displayed on page.
+     *
+     * @param string $message
+     * @param string $messageType
+     * @return void
+     */
+    public static function addRedirectMsg(string $message, string $messageType = 'danger')
+    {
+        if ($message != '') {
+            $messageType = ! in_array($messageType, ['success', 'danger', 'warning', 'info']) ? 'success' : $messageType;
+
+            $messages   = session()->get('sys_messages.'.$messageType, []);
+            $messages[] = $message;
+            session()->put('sys_messages.'.$messageType, $messages);
+        }
+    }
+
+    /**
+     * Returns an array of default validation messages.
+     *
+     * @return array
+     */
+    public static function defaultValidationMsgs()
+    {
+        return [
+            'required'    => __('messages.general_validations_messages_required'),
+            'required_if' => __('messages.general_validations_messages_required'),
+            'string'      => __('messages.general_validations_messages_string'),
+            'in'          => __('messages.general_validations_messages_in'),
+            'max'         => __('messages.general_validations_messages_max'),
+            'min'         => __('messages.general_validations_messages_min'),
+            'lte'         => __('messages.general_validations_messages_lte'),
+            'gte'         => __('messages.general_validations_messages_gte'),
+            'numeric'     => __('messages.general_validations_messages_numeric'),
+            'integer'     => __('messages.general_validations_messages_integer'),
+            'date_format' => __('messages.general_validations_messages_date_format'),
+            'email'       => __('messages.general_validations_messages_email'),
+            'confirmed'   => __('messages.general_validations_messages_confirmed'),
+            'unique'      => __('messages.general_validations_messages_unique'),
+        ];
+    }
+
+    /**
+     * Function to return a JSON response with a standard format.
+     *
+     * @param array $data
+     * @param array $errors
+     * @param string $error
+     * @param int $code
+     * @return JsonResponse
+     */
+    public static function toJsonResponse(array $data = [], array $errors = [], $error = '', $code = 200)
+    {
+        $response = [
+            'message' => '',
+            'action'  => '',
+            'data'    => $data,
+        ];
+
+        if ($error) {
+            $response['error'] = $error;
+        }
+
+        if ($errors) {
+            $response['fieldErrors'] = $errors;
+        }
+
+        return new JsonResponse($response, $code);
+    }
+
+    /**
+     * Generates breadcrumbs based on current route.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    public static function breadcrumbs()
+    {
+        $currentRoute       = Route::current();
+        $currentRouteParams = $currentRoute ? $currentRoute->parameters() : null;
+        $currentRouteName   = $currentRoute ? $currentRoute->getName() : null;
+
+        if (! in_array($currentRouteName, ['users.index', 'users.create', 'users.edit', 'appconfig.config'])
+        ) {
+            return collect([]);
+        }
+
+        $breadcrumbs = collect([
+            [
+                'text'       => __('messages.breadcrumb_home_text'),
+                'link'       => route('home'),
+                'class'      => null,
+                'link_class' => null,
+            ],
+        ]);
+
+        switch ($currentRouteName) {
+            case 'appconfig.config':
+                $breadcrumbs->push([
+                    'text'       => __('messages.breadcrumb_appconfig_text'),
+                    'link'       => route('appconfig.config'),
+                    'class'      => null,
+                    'link_class' => null,
+                ]);
+                break;
+
+            case 'users.index':
+                $breadcrumbs->push([
+                    'text'       => __('messages.breadcrumb_users_list_text'),
+                    'link'       => route('users.index'),
+                    'class'      => null,
+                    'link_class' => null,
+                ]);
+                break;
+
+            case 'users.create':
+                $breadcrumbs->push([
+                    'text'       => __('messages.breadcrumb_users_list_text'),
+                    'link'       => route('users.index'),
+                    'class'      => null,
+                    'link_class' => null,
+                ]);
+                $breadcrumbs->push([
+                    'text'       => __('messages.breadcrumb_users_create_text'),
+                    'link'       => null,
+                    'class'      => 'text-secondary',
+                    'link_class' => null,
+                ]);
+                break;
+
+            case 'users.edit':
+                $breadcrumbs->push([
+                    'text'       => __('messages.breadcrumb_users_list_text'),
+                    'link'       => route('users.index'),
+                    'class'      => null,
+                    'link_class' => null,
+                ]);
+                if (is_array($currentRouteParams) && array_key_exists('id', $currentRouteParams)) {
+                    $user = User::where('id', $currentRouteParams['id'])->get()->first();
+                    if ($user) {
+                        $breadcrumbs->push([
+                            'text'       => __('messages.breadcrumb_users_edit_text', ['USER_FULLNAME' => $user->name]),
+                            'link'       => route('users.edit', ['id' => $user->id]),
+                            'class'      => 'badge bg-app_dblue fst-italic fw-bold small text-white',
+                            'link_class' => 'text-white',
+                        ]);
+                    }
+                }
+                break;
+
+            default:
+                break;
+        }
+
+        return $breadcrumbs;
+    }
+
+    /**
+     * Retrieve the application configuration.
+     *
+     * @return array
+     */
+    public static function getConfig() : array
+    {
+        $config = AppConfig::get(['name', 'value'])
+            ->pluck('value', 'name')
+            ->all();
+
+        return [
+            'items_per_page_users' => is_array($config) && array_key_exists('items_per_page_users', $config) ? $config['items_per_page_users'] : 100,
+        ]
+    }
+
+
+    /**
+     * Exports all data of given tables to csv files and upload them to the configured sftp server.
+     *
+     * @return void
+     */
+    public static function exportToFTP()
+    {
+        collect([
+            'users',
+            //other important tables of your application
+        ])
+        ->each(function ($eachTableName) {
+            $tableColumns = \Schema::getColumnListing($eachTableName);
+            $tableData    = \DB::table($eachTableName)
+                ->get()
+                ->map(function ($tableEachRecord) {
+                    return array_values((array) $tableEachRecord);
+                })
+                ->toArray();
+
+            $csv = Writer::createFromString();
+            $csv->insertOne($tableColumns);
+            $csv->insertAll($tableData);
+            $generatedCsv = $csv->toString();
+
+            try {
+                Storage::disk('sftp_export')->delete($eachTableName.'.csv');
+            } catch (\Throwable $th) {
+                logger()->error($th);
+            }
+
+            try {
+                Storage::disk('sftp_export')->put($eachTableName.'.csv', $generatedCsv);
+            } catch (\Exception $e) {
+                logger()->error('Export Error: Table Name: '.$eachTableName);
+                logger()->error($e);
+            }
+        });
+    }
+
+}

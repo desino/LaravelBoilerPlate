@@ -1,0 +1,252 @@
+<?php
+
+namespace App\Models;
+
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Mail\ResetPasswordMail;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+
+class User extends Authenticatable
+{
+    use  HasFactory, Notifiable;
+
+    public const STATUS_INACTIVE = 0;
+    public const STATUS_ACTIVE   = 1;
+
+    public const ROLE_ADMIN   = 1;//Super Admin
+    public const ROLE_NRMLUSR = 2;//Normal User
+
+    /**
+     * The attributes that aren't mass assignable.
+     *
+     * @var array
+     */
+    protected $guarded = [];
+
+    /**
+     * Indicates if the model should be timestamped.
+     *
+     * @var bool
+     */
+    public $timestamps = false;
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+
+    /**
+     * Accessor for fullName
+     *
+     * @return Attribute
+     */
+    protected function fullName(): Attribute
+    {
+        return Attribute::make(
+            get: function (mixed $value) {
+                $fullName = [];
+                if ($this->first_name != null || $this->first_name != '') {
+                    $fullName[] = $this->first_name;
+                }
+                if ($this->last_name != null || $this->last_name != '') {
+                    $fullName[] = $this->last_name;
+                }
+                return count($fullName) > 0 ? implode(" ", $fullName) : ' --- ';
+            },
+        );
+    }
+
+    /**
+     * Send the password reset notification.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $reset_link = url(config('app.url').route('password.reset', $token, false));
+        try {
+            Mail::to($this->email)->send(new ResetPasswordMail($reset_link));
+        } catch (\Exception $e) {
+            logger()->error($e);
+        }
+        //$this->notify(new ResetPasswordNotification($token));
+    }
+
+    /**
+     * Scope a query to only include results based on user status
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder $query
+     * @param  int|array $status
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeStatus($query, int|array $status)
+    {
+        if (is_array($status)) {
+            return $query->whereIn('status', $status);
+        }
+        return $query->where('status', $status);
+    }
+
+    /**
+     * Scope a query to only include results based on user roles
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder $query
+     * @param  int|array $roles
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeRoles($query, int|array $roles)
+    {
+        if (is_array($roles)) {
+            return $query->whereIn('usertype', $roles);
+        }
+        return $query->where('usertype', $roles);
+    }
+
+    /**
+     * Returns the value for user active status
+     *
+     * @return integer
+     */
+    public static function getStatusActive() : int
+    {
+        return self::STATUS_ACTIVE;
+    }
+
+    /**
+     * Returns the value for user deactivate status
+     *
+     * @return integer
+     */
+    public static function getStatusInactive() : int
+    {
+        return self::STATUS_INACTIVE;
+    }
+
+    /**
+     * Returns the list of statuses used for user
+     *
+     * @return array
+     */
+    public static function userStatuses() : array
+    {
+        return [
+            self::getStatusActive(),
+            self::getStatusInactive(),
+        ];
+    }
+
+    /**
+     * Checks if user status is active or not
+     *
+     * @return boolean
+     */
+    public function isStatusActive () : bool
+    {
+        return $this->status == self::getStatusActive() ? true : false;
+    }
+
+    /**
+     * Checks if user has status deactivated or not.
+     *
+     * @return boolean
+     */
+    public function isStatusInactive () : bool
+    {
+        return $this->status == self::getStatusInactive() ? true : false;
+    }
+
+    /**
+     * Returns list of roles used for user
+     *
+     * @return array
+     */
+    public static function getRoles() : array
+    {
+        return [
+            self::getRoleAdmin(),
+            self::getRoleNormalUser(),
+        ];
+    }
+
+    /**
+     * Returns value for Normal User role
+     *
+     * @return integer
+     */
+    public static function getRoleNormalUser() : int
+    {
+        return self::ROLE_NRMLUSR;
+    }
+
+    /**
+     * returns value for Admin role
+     *
+     * @return integer
+     */
+    public static function getRoleAdmin() : int
+    {
+        return self::ROLE_ADMIN;
+    }
+
+    /**
+     * To identify if user has Standard User role or not.
+     *
+     * @return boolean
+     */
+    public function isRoleStdUser() : bool
+    {
+        return $this->usertype == self::getRoleNormalUser() ? true : false;
+    }
+
+    /**
+     * To identify if user has admin role or not.
+     *
+     * @return boolean
+     */
+    public function isRoleAdmin() : bool
+    {
+        return $this->usertype == self::getRoleAdmin() ? true : false;
+    }
+
+    /**
+     * Returns current role name of the user.
+     *
+     * @return string
+     */
+    public function getRoleName() : string
+    {
+        $roles = self::getRoles(true);
+
+        return in_array($this->usertype, $roles) ? __('messages.user_role'.$this->usertype.'_name') : __('messages.user_role_none_name');
+    }
+
+    /**
+     * Returns current role value of the user.
+     *
+     * @return string
+     */
+    public function getRole() : string
+    {
+        return $this->usertype;
+    }
+
+}

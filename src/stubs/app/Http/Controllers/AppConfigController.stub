@@ -1,0 +1,94 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use App\Models\AppConfig;
+use Illuminate\Http\Request;
+use App\Services\AppMiscService;
+use Illuminate\Support\Facades\Validator;
+
+class AppConfigController extends Controller
+{
+    private $loggedUser;
+
+    /**
+     * Constructor to set the middleware that will get the logged user instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            $this->loggedUser = \Auth::user();
+
+            return $next($request);
+        });
+    }
+
+    /**
+     * This function is used to get the app config view and also update the values if the request is POST.
+     *
+     * @param Request $request The HTTP request object.
+     *
+     * @return \Illuminate\Http\Response The HTTP response.
+     */
+    public function config(Request $request)
+    {
+        if (! $this->loggedUser) {
+            AppMiscService::addRedirectMsg(__('messages.general_not_allowed_access_message_text'));
+
+            return redirect()->route('home');
+        }
+
+        $config = AppMiscService::getConfig();
+
+        if ($request->isMethod('POST')) {
+            $validationsMsgs = AppMiscService::defaultValidationMsgs();
+            $validations     = [
+                'items_per_page_users' => ['required', 'integer', 'gte:0'],
+            ];
+
+            $validator = Validator::make($request->all(), $validations, $validationsMsgs);
+            if ($validator->fails()) {
+                AppMiscService::addRedirectMsg(__('messages.general_form_error_message'));
+
+                return redirect()->route('appconfig.config')->withInput()->withErrors($validator);
+            }
+
+            $postedAppConfig = [
+                [
+                    'name' => 'items_per_page_users',
+                    'value' => $request->post('items_per_page_users', 100),
+                ],
+            ];
+
+            \DB::beginTransaction();
+            try {
+                AppConfig::whereIn('name', [
+                    'items_per_page_users',
+                    ])
+                    ->delete();
+                AppConfig::insert($postedAppConfig);
+
+                \DB::commit();
+            } catch (\Exception $e) {
+                \DB::rollback();
+                logger()->error($e);
+                AppMiscService::addRedirectMsg(__('messages.appconfig_config_fail_msg'));
+
+                return redirect()->route('appconfig.config')->withInput();
+            }
+
+            AppMiscService::addRedirectMsg(__('messages.appconfig_config_success_msg'), 'success');
+
+            return redirect()->route('appconfig.config');
+        }
+
+        $page_title = __('messages.appconfig_config_page_title');
+        return view('config', compact(
+            'page_title',
+            'config',
+        ));
+    }
+}

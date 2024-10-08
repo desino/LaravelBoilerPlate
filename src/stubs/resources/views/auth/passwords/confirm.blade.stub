@@ -1,0 +1,46 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="row g-0 justify-content-center">
+    <div class="col-12 col-md-7 col-lg-7 col-xl-6">
+        <form action="{{ route('password.confirm') }}" class="needs-validation" method="POST" novalidate name="password_confirm_form" id="password_confirm_form" >
+            <div class="card border-0 bg-transparent">
+                <div class="card-header bg-app_lblue border-0 text-white row g-0">
+                    <div class="col-12">
+                        <h1 class="">
+                            <i class="fas fa-key"></i> {{ trans('messages.reset_password_request_confirm_password_page_title') }}
+                        </h1>
+                    </div>
+                    <div class="col-12 my-2 small fst-italic clearfix">
+                        {!! trans('messages.reset_password_request_confirm_password_page_desc') !!}
+                    </div>
+                </div>
+                <div class="card-body border-0 px-0">
+                    <div class="mb-3">
+                        <label for="password" class="fw-bold form-label">
+                            {{ trans('messages.reset_password_request_confirm_password_form_field_password_title') }}<strong class="text-danger">*</strong>
+                        </label>
+                        <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" value="" required autocomplete="off" />
+                        @error('password')
+                            <small class="invalid-feedback fw-bold fst-italic text-danger" role="alert">{{ $message }}</small>
+                        @enderror
+                    </div>
+                    <div class="mb-3 text-end">
+                        <a href="{{ route('password.request') }}">
+                            <small>
+                                {{ trans('messages.reset_password_request_confirm_password_forgot_password_page_link_text') }}
+                            </small>
+                        </a>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent p-0 d-grid gap-1">
+                    <button class="btn btn-app_dblue fw-bold border-0 text-white" type="submit" style="outline: none;">
+                        {{ trans('messages.reset_password_request_confirm_password_submit_btn_title') }}
+                    </button>
+                </div>
+            </div>
+            @csrf
+        </form>
+    </div>
+</div>
+@endsection

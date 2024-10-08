@@ -1,0 +1,58 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="row g-0 justify-content-center">
+    <div class="col-12 col-md-7 col-lg-7 col-xl-6">
+        <form action="{{ route('password.update') }}" class="needs-validation" method="POST" novalidate name="resetpassword_form" id="resetpassword_form">
+            <div class="card border-0 bg-transparent">
+                <div class="card-header bg-app_lblue border-0 text-white row g-0">
+                    <div class="col-12">
+                        <h1 class="">
+                            <i class="fas fa-key"></i> {{ trans('messages.reset_password_page_title') }}
+                        </h1>
+                    </div>
+                    <div class="col-12 my-2 small fst-italic clearfix">
+                        {!! trans('messages.reset_password_page_desc') !!}
+                    </div>
+                </div>
+                <div class="card-body border-0 px-0">
+                    <div class="mb-3">
+                        <label for="email" class="fw-bold form-label">
+                            {{ trans('messages.reset_password_form_field_email_address_title') }}<strong class="text-danger">*</strong>
+                        </label>
+                        <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ $email ?? old('email') }}" required autofocus autocomplete="email" />
+                        @error('email')
+                            <small class="invalid-feedback fw-bold fst-italic text-dark" role="alert">{{ $message }}</small>
+                        @enderror
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="fw-bold form-label">
+                            {{ trans('messages.reset_password_form_field_password_title') }}<strong class="text-danger">*</strong>
+                        </label>
+                        <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" value="" required  autocomplete="new-password"/>
+                        @error('password')
+                            <small class="invalid-feedback fw-bold fst-italic text-dark" role="alert">{{ $message }}</small>
+                        @enderror
+                    </div>
+                    <div class="mb-3">
+                        <label for="password_confirmation" class="fw-bold form-label">
+                            {{ trans('messages.reset_password_form_field_confirm_password_title') }}<strong class="text-danger">*</strong>
+                        </label>
+                        <input type="password" class="form-control @error('password_confirmation') is-invalid @enderror" id="password_confirmation" name="password_confirmation" value="" required  autocomplete="new-password"/>
+                        @error('password_confirmation')
+                            <small class="invalid-feedback fw-bold fst-italic text-dark" role="alert">{{ $message }}</small>
+                        @enderror
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent p-0 d-grid gap-1">
+                    <button class="btn btn-app_dblue fw-bold border-0 text-white" type="submit" style="outline: none;">
+                        {{ trans('messages.reset_password_form_submit_btn_text') }}
+                    </button>
+                </div>
+            </div>
+            @csrf
+            <input type="hidden" name="token" value="{{ request()->token }}">
+        </form>
+    </div>
+</div>
+@endsection

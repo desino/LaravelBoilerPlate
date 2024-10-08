@@ -1,0 +1,39 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="row g-0 justify-content-center">
+    <div class="col-12 col-md-7 col-lg-7 col-xl-6">
+        <form action="{{ route('password.email') }}" class="needs-validation" method="POST" novalidate name="resetpassword_request_form" id="resetpassword_request_form">
+            <div class="card border-0 bg-transparent">
+                <div class="card-header bg-app_lblue border-0 text-white row g-0">
+                    <div class="col-12">
+                        <h1 class="">
+                            <i class="fas fa-key"></i> {{ trans('messages.reset_password_request_page_title') }}
+                        </h1>
+                    </div>
+                    <div class="col-12 my-2 small fst-italic clearfix">
+                        {!! trans('messages.reset_password_request_page_desc') !!}
+                    </div>
+                </div>
+                <div class="card-body border-0 px-0">
+                    <div class="mb-3">
+                        <label for="email" class="fw-bold form-label">
+                            {{ trans('messages.reset_password_request_form_field_email_Address_title') }}<strong class="text-danger">*</strong>
+                        </label>
+                        <input type="text" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="off"/>
+                        @error('email')
+                            <small class="invalid-feedback fw-bold fst-italic text-danger" role="alert">{{ $message }}</small>
+                        @enderror
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent p-0 d-grid gap-1">
+                    <button class="btn btn-app_dblue fw-bold border-0 text-white" type="submit" style="outline: none;">
+                        {{ trans('messages.reset_password_request_form_submit_btn_text') }}
+                    </button>
+                </div>
+            </div>
+            @csrf
+        </form>
+    </div>
+</div>
+@endsection

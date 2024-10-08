@@ -1,0 +1,400 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use App\Services\AppMiscService;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+
+class UserController extends Controller
+{
+    private $loggedUser;
+
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            $this->loggedUser = \Auth::user();
+
+            return $next($request);
+        });
+    }
+
+    /**
+     * List all users.
+     *
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index(Request $request)
+    {
+        if (! $this->loggedUser) {
+            AppMiscService::addRedirectMsg(__('messages.general_not_allowed_access_message_text'));
+
+            return redirect()->route('home');
+        }
+
+        $config       = AppMiscService::getConfig();
+        $userStatuses = User::userStatuses();
+        $userRoles    = User::getRoles();
+
+        if ($request->isMethod('POST')) {
+            $usersFilterStatus = $request->post('users_filter_status', [$userStatuses[0]]);
+            $validatedUsersFilterStatus = count($usersFilterStatus) == count(array_intersect($usersFilterStatus, $userStatuses)) ? $usersFilterStatus : [$userStatuses[0]];
+            $request->session()->put('users_filter_status', $validatedUsersFilterStatus);
+
+            $usersFilterRoles        = $request->post('users_filter_roles', $userRoles);
+            $validatedUsersFilterRoles = count($usersFilterRoles) == count(array_intersect($usersFilterRoles, $userRoles)) ? $usersFilterRoles : $userRoles;
+            $request->session()->put('users_filter_roles', $validatedUsersFilterRoles);
+
+            $usersFilterKeyword = $request->post('users_filter_keyword', '');
+            $request->session()->put('users_filter_keyword', $usersFilterKeyword);
+        }
+
+        $usersFilterStatus = $request->session()->get('users_filter_status', [$userStatuses[0]]);
+        $usersFilterStatus = count($usersFilterStatus) == count(array_intersect($usersFilterStatus, $userStatuses)) ? $usersFilterStatus : [$userStatuses[0]];
+
+        $usersFilterRoles = $request->session()->get('users_filter_roles', $userRoles);
+        $usersFilterRoles = count($usersFilterRoles) == count(array_intersect($usersFilterRoles, $userRoles)) ? $usersFilterRoles : $userRoles;
+
+        $usersFilterKeyword = $request->session()->get('users_filter_keyword', '');
+
+        $users = User::status($usersFilterStatus)
+            ->when(count($usersFilterRoles) > 0, function ($q) use ($usersFilterRoles) {
+                $q->whereIn('usertype', $usersFilterRoles);
+            }, function ($q) use ($userRoles) {
+                $q->whereIn('usertype', $userRoles);
+            })
+            ->when(strlen($usersFilterKeyword) > 0, function ($q) use ($usersFilterKeyword) {
+                $keyword_conditions = [];
+                $explode_filter_keyword = preg_split('/\s+/', $usersFilterKeyword);
+                foreach ($explode_filter_keyword as $eachExplodedFilterKeyword) {
+                    $keyword_conditions[] = " first_name LIKE '%".$eachExplodedFilterKeyword."%' ";
+                    $keyword_conditions[] = " last_name LIKE '%".$eachExplodedFilterKeyword."%' ";
+                }
+                $q->whereRaw("( ".implode(" OR ", $keyword_conditions)." ) ");
+            })
+            ->paginate($config['items_per_page_users']);
+
+        $page_title = __('messages.users_list_page_title');
+
+        return view('users.index', compact(
+            'page_title',
+            'users',
+            'userStatuses',
+            'userRoles',
+            'usersFilterStatus',
+            'usersFilterRoles',
+            'usersFilterKeyword',
+        ));
+    }
+
+    /**
+     * Handle the user creation request.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function create(Request $request)
+    {
+        if (! $this->loggedUser) {
+            AppMiscService::addRedirectMsg(__('messages.general_not_allowed_access_message_text'));
+
+            return redirect()->route('home');
+        }
+
+        $userRoles = User::getRoles();
+
+        if ($request->isMethod('POST')) {
+            $validationsMsgs = AppMiscService::defaultValidationMsgs();
+            $validationsMsgs['email.unique'] = __('messages.users_general_error_email_is_not_unique');
+            $validationsMsgs['usertype.in']  = __('messages.users_general_error_group_invalid');
+
+            $validations = [
+                'first_name' => ['required', 'string', 'max:55'],
+                'last_name'  => ['required', 'string', 'max:55'],
+                'email'      => ['required', 'email', 'unique:users,email','max:191'],
+                'usertype'   => ['required', 'in:'.implode(',', $userRoles)],
+                'password'   => ['required', 'confirmed', 'min:5', 'max:20'],
+                'password_confirmation'   => ['required'],
+            ];
+
+            $validator = Validator::make($request->all(), $validations, $validationsMsgs);
+            if ($validator->fails()) {
+                AppMiscService::addRedirectMsg(__('messages.general_form_error_message'));
+
+                return redirect()->route('users.create')->withInput()->withErrors($validator->errors());
+            }
+
+            \DB::beginTransaction();
+            try {
+                $user = User::create([
+                    'first_name' => $request->post('first_name'),
+                    'last_name'  => $request->post('last_name'),
+                    'usertype'   => $request->post('usertype'),
+                    'email'      => $request->post('email'),
+                    'password'   => Hash::make($request->post('password')),
+                    'created_at' => now()->toDateTimeString(),
+                    'created_by' => $this->loggedUser->id,
+                ]);
+
+                \DB::commit();
+            } catch (\Exception $e) {
+                \DB::rollback();
+                logger()->error($e);
+                AppMiscService::addRedirectMsg(__('messages.create_user_error_msg'));
+
+                return redirect()->route('users.create')->withInput();
+            }
+
+            AppMiscService::addRedirectMsg(__('messages.create_user_success_msg'), 'success');
+
+            return redirect()->route('users.index');
+        }
+
+        $page_title = __('messages.create_user_page_title');
+
+        return view('users.create', compact(
+            'page_title',
+            'userRoles',
+        ));
+    }
+
+    /**
+     * Handles request to edit the record & also process the posted edit from for the User.
+     *
+     * @param int $id The ID of the User to be edited
+     * @param Request $request The HTTP request object
+     * @throws \Exception If an error occurs during the update process
+     * @return \Illuminate\Http\Response
+     */
+    public function edit($id, Request $request)
+    {
+        if (! $this->loggedUser) {
+            AppMiscService::addRedirectMsg(__('messages.general_not_allowed_access_message_text'));
+
+            return redirect()->route('home');
+        }
+
+        $user = User::find($id);
+        if (!$user) {
+            AppMiscService::addRedirectMsg(__('messages.general_error_user_not_found'));
+
+            return redirect()->route('users.index');
+        }
+
+        $userRoles = User::getRoles();
+        if ($request->isMethod('POST')) {
+            $validationsMsgs = AppMiscService::defaultValidationMsgs();
+            $validationsMsgs['email.unique'] = __('messages.users_general_error_email_is_not_unique');
+
+            $validations = [
+                'first_name' => ['required', 'max:191'],
+                'last_name'  => ['required', 'max:191'],
+                'email'      => ['required', 'email', 'unique:users,email,'.$user->id, 'max:191'],
+            ];
+
+            if ($this->loggedUser->id != $user->id) {
+                $validations['usertype'] = ['required', 'in:'.implode(',', $userRoles)];
+                $validationsMsgs['usertype.in'] = __('messages.users_general_error_group_invalid');
+            }
+
+            if ($request->input('password') != '' || $request->input('password_confirmation') != '') {
+                $validations['password']              = ['required', 'confirmed', 'min:5', 'max:20'];
+                $validations['password_confirmation'] = ['required'];
+            }
+
+            $validator = Validator::make($request->all(), $validations, $validationsMsgs);
+            if ($validator->fails()) {
+                AppMiscService::addRedirectMsg(__('messages.general_form_error_message'));
+
+                return redirect()->route('users.edit', ['id' => $user->id])->withInput()->withErrors($validator->errors());
+            }
+
+            $userData = [
+                'first_name' => $request->post('first_name'),
+                'last_name'  => $request->post('last_name'),
+                'email'      => $request->post('email'),
+                'updated_at' => now()->toDateTimeString(),
+                'updated_by' => $this->loggedUser->id,
+            ];
+
+            if ($this->loggedUser->id != $user->id) {
+                $userData['usertype'] = $request->post('usertype');
+            }
+            if ($request->input('password') != '') {
+                $userData['password'] = Hash::make($request->input('password'));
+            }
+
+            \DB::beginTransaction();
+            try {
+                $user->update($userData);
+
+                \DB::commit();
+            } catch (\Exception $e) {
+                \DB::rollback();
+                logger()->error($e);
+                AppMiscService::addRedirectMsg(__('messages.edit_user_error_msg'));
+
+                return redirect()->route('users.edit', ['id' => $user->id]);
+            }
+
+            AppMiscService::addRedirectMsg(__('messages.edit_user_success_msg'), 'success');
+
+            return redirect()->route('users.index');
+        }
+
+        $page_title = __('messages.edit_user_page_title', ['USER_FULLNAME' => $user->fullName]);
+
+        return view('users.edit', compact(
+            'page_title',
+            'user',
+            'userRoles',
+        ));
+    }
+
+    /**
+     * Deactivates a user.
+     *
+     * @param Request $request The HTTP request object.
+     * @throws \Exception If an error occurs during the deactivation process.
+     * @return \Illuminate\Http\Response The HTTP response.
+     */
+    public function deactivate(Request $request)
+    {
+        if (! $this->loggedUser) {
+            AppMiscService::addRedirectMsg(__('messages.general_not_allowed_access_message_text'));
+
+            return redirect()->route('home');
+        }
+
+        $deactivate_id = (int) $request->post('deactivate_id', 0);
+        $user = User::find($deactivate_id);
+        if (!$user) {
+            AppMiscService::addRedirectMsg(__('messages.general_error_user_not_found'));
+
+            return redirect()->route('users.index');
+        }
+
+        if ($this->loggedUser->id == $user->id) {
+            AppMiscService::addRedirectMsg(__('messages.disable_user_error_cannot_disable_yourself'));
+
+            return redirect()->route('users.index');
+        }
+
+        \DB::beginTransaction();
+        try {
+            $user->update([
+                'status'     => User::getStatusInactive(),
+                'updated_at' => now()->toDateTimeString(),
+                'updated_by' => $this->loggedUser->id,
+            ]);
+
+            \DB::commit();
+        } catch (\Exception $e) {
+            \DB::rollback();
+            logger()->error($e);
+            AppMiscService::addRedirectMsg(__('messages.disable_user_error_msg'));
+
+            return redirect()->route('users.index');
+        }
+
+        AppMiscService::addRedirectMsg(__('messages.disable_user_success_msg'), 'success');
+
+        return redirect()->route('users.index');
+    }
+
+    /**
+     * Activates a user.
+     *
+     * @param Request $request The HTTP request object.
+     * @throws \Exception if an error occurs during the activation process
+     * @return \Illuminate\Http\Response The HTTP response.
+     */
+    public function activate(Request $request)
+    {
+        if (! $this->loggedUser) {
+            AppMiscService::addRedirectMsg(__('messages.general_not_allowed_access_message_text'));
+
+            return redirect()->route('home');
+        }
+
+        $activate_id = (int) $request->post('activate_id', 0);
+        $user = User::find($activate_id);
+        if (!$user) {
+            AppMiscService::addRedirectMsg(__('messages.general_error_user_not_found'));
+
+            return redirect()->route('users.index');
+        }
+
+        \DB::beginTransaction();
+        try {
+            $user->update([
+                'status'     => User::getStatusActive(),
+                'updated_at' => now()->toDateTimeString(),
+                'updated_by' => $this->loggedUser->id,
+            ]);
+
+            \DB::commit();
+        } catch (\Exception $e) {
+            \DB::rollback();
+            logger()->error($e);
+            AppMiscService::addRedirectMsg(__('messages.enable_user_error_msg'));
+
+            return redirect()->route('users.index');
+        }
+
+        AppMiscService::addRedirectMsg(__('messages.enable_user_success_msg'), 'success');
+
+        return redirect()->route('users.index');
+    }
+
+    /**
+     * Deletes a user.
+     *
+     * @param Request $request The HTTP request object.
+     *
+     * @return \Illuminate\Http\Response The HTTP response.
+     */
+    public function delete(Request $request)
+    {
+        if (! $this->loggedUser) {
+            AppMiscService::addRedirectMsg(__('messages.general_not_allowed_access_message_text'));
+
+            return redirect()->route('home');
+        }
+
+        $delete_id = (int) $request->post('delete_id', 0);
+        $user = User::find($delete_id);
+        if (!$user) {
+            AppMiscService::addRedirectMsg(__('messages.general_error_user_not_found'));
+
+            return redirect()->route('users.index');
+        }
+
+        \DB::beginTransaction();
+        try {
+            $user->delete();
+
+            \DB::commit();
+        } catch (\Exception $e) {
+            \DB::rollback();
+            logger()->error($e);
+            AppMiscService::addRedirectMsg(__('messages.delete_user_error_msg'));
+
+            return redirect()->route('users.index');
+        }
+
+        AppMiscService::addRedirectMsg(__('messages.delete_user_success_msg'), 'success');
+
+        return redirect()->route('users.index');
+    }
+}
+

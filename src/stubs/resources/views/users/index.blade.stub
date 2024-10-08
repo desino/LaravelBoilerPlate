@@ -1,0 +1,352 @@
+@extends('layouts.app')
+
+@section('customscript')
+<script>
+    jQuery(document).ready(function($) {
+        jQuery(document).on('click', '.deactivate_user', function(event) {
+            event.preventDefault();
+            var eleId = parseInt(jQuery(this).attr('id').split('deactivate_user_')[1]);
+            if (eleId > 0) {
+                jQuery('#deactivateConfirmModal').modal('show');
+                jQuery("#deactivate_form #deactivate_id").val(eleId);
+            }
+        });
+        jQuery(document).on('click', '#deactivate_confirm_modal_submit_btn', function(event) {
+            event.preventDefault();
+            jQuery('#loading_screen').show();
+            jQuery("form#deactivate_form").submit();
+        });
+
+        jQuery(document).on('click', '.activate_user', function(event) {
+            event.preventDefault();
+            var eleId = parseInt(jQuery(this).attr('id').split('activate_user_')[1]);
+            if (eleId > 0) {
+                jQuery('#activateConfirmModal').modal('show');
+                jQuery("#activate_form #activate_id").val(eleId);
+            }
+        });
+        jQuery(document).on('click', '#activate_confirm_modal_submit_btn', function(event) {
+            event.preventDefault();
+            jQuery('#loading_screen').show();
+            jQuery("form#activate_form").submit();
+        });
+
+        jQuery(document).on('click', '.delete_user', function(event) {
+            event.preventDefault();
+            var eleId = parseInt(jQuery(this).attr('id').split('delete_user_')[1]);
+            if (eleId > 0) {
+                jQuery('#deleteConfirmModal').modal('show');
+                jQuery("#deleteConfirmModal #delete_id").val(eleId);
+            }
+        });
+        jQuery(document).on('click', '#delete_confirm_modal_submit_btn', function(event) {
+            event.preventDefault();
+            jQuery('#loading_screen').show();
+            jQuery("form#delete_form").submit();
+        });
+
+        jQuery(document).on('click', '#users_index_clear', function(event) {
+            event.preventDefault();
+            jQuery("#users_filter_roles option").removeAttr("selected");
+            jQuery('input[name="users_filter_status[]"], #users_filter_keyword').val('');
+            jQuery('#loading_screen').show();
+            jQuery("#users_index_submit").trigger('click');
+        });
+        jQuery('#users_filter_roles').selectpicker({
+            'noneSelectedText'  : "{{ __('messages.users_list_filter_usertype_text') }}",
+            'liveSearch'        : true,
+            'actionsBox'        : true,
+            'selectAllText'     : "{{ __('messages.dropdown_multiple_select_all_btn_text') }}",
+            'deselectAllText'   : "{{ __('messages.dropdown_multiple_deselect_all_btn_text') }}",
+            'styleBase'         : 'form-control',
+            'width'             : '100%',
+            'dropupAuto'        : false,
+            'tickIcon'          : 'fa-solid fa-check',
+            'selectedTextFormat': 'count > 0',
+            'doneButton'        : true,
+            'doneButtonText'    : "{{ __('messages.dropdown_selection_done_btn_text') }}",
+        });
+        jQuery('#users_filter_fullnames').selectpicker({
+            'noneSelectedText'  : "{{ __('messages.users_list_filter_fullnames_text') }}",
+            'liveSearch'        : true,
+            'actionsBox'        : true,
+            'selectAllText'     : "{{ __('messages.dropdown_multiple_select_all_btn_text') }}",
+            'deselectAllText'   : "{{ __('messages.dropdown_multiple_deselect_all_btn_text') }}",
+            'styleBase'         : 'form-control',
+            'width'             : '100%',
+            'dropupAuto'        : false,
+            'tickIcon'          : 'fa-solid fa-check',
+            'selectedTextFormat': 'count > 0',
+            'doneButton'        : true,
+            'doneButtonText'    : "{{ __('messages.dropdown_selection_done_btn_text') }}",
+        });
+    });
+</script>
+@endsection
+
+@section('content')
+<div class="row g-0 align-items-center">
+    <div class="col-12">
+        <div class="card border-0 pt-3">
+            <div class="card-header bg-transparent border-0 row align-items-center p-0">
+                <div class="col-12 col-md-9 col-lg-10">
+                    <h1 class="text-app_dblue">
+                        {{ $page_title }}
+                    </h1>
+                    <div class="my-2 small fst-italic clearfix text-app_lblue">
+                        {!! __('messages.users_list_page_desc') !!}
+                    </div>
+                </div>
+                <div class="col-12 col-md-3 col-lg-2">
+                    <a class="btn btn-app_dblue border-0 w-100" href="{{route('users.create')}}" role="button" >
+                        <i class="fa-solid fa-plus"></i> {{ __('messages.users_list_create_btn_text') }}
+                    </a>
+                </div>
+            </div>
+            <div class="card-body border-0 px-0">
+                <div class="clearfix py-4">
+                    <form action="{{route('users.index')}}" class="needs-validation" method="POST" novalidate name="users_index" id="users_index">
+                        <div class="row w-100 g-0 align-items-end">
+                            <div class="col-12 col-md-12 col-lg-4 px-1">
+                                <div class="w-100 my-1">
+                                    @foreach ($userStatuses as $eachUserStatus)
+                                        <div class="form-check form-check-inline">
+                                            <input type="checkbox" class="form-check-input" id="users_filter_status_{{ $eachUserStatus }}" name="users_filter_status[]" value="{{ $eachUserStatus }}" @checked(in_array($eachUserStatus, $usersFilterStatus)) >
+                                            <label class="form-check-label" for="users_filter_status_{{ $eachUserStatus }}">
+                                                <small class="fw-bold">{{__('messages.general_record_status'.$eachUserStatus.'_text')}}</small>
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6 col-lg-3 px-1">
+                                <div class="w-100 my-1">
+                                    <input class="form-control" type="text" name="users_filter_keyword" id="users_filter_keyword" value="{{ $usersFilterKeyword }}" placeholder="{{ __('messages.users_list_filter_keyword_text') }}">
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6 col-lg-3 px-1">
+                                <div class="w-100 my-1">
+                                    <select name="users_filter_roles[]" id="users_filter_roles" multiple="multiple">
+                                        @foreach ($userRoles as $eachUserRole)
+                                            <option value="{{ $eachUserRole }}" data-content="" @selected(in_array($eachUserRole, $usersFilterRoles))>{{ __('messages.user_role'.$eachUserRole.'_name') }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-6 col-lg-1 px-1">
+                                <div class="w-100 my-1">
+                                    <button type="submit" class="btn btn-app_dblue w-100 border-0" id="users_index_submit" name="users_index_submit">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-6 col-lg-1 px-1">
+                                <div class="w-100 my-1">
+                                    <button class="btn btn-dark w-100 border-0" id="users_index_clear" name="users_index_clear">
+                                        <i class="fas fa-eraser"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        @csrf
+                    </form>
+                </div>
+
+                <div class="w-100">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-none d-md-block active border-0 bg-app_lblue">
+                            <div class="row align-items-md-center">
+                                <div class="col-md-4 col-lg-4 col-xl-4 text-start">
+                                    <small class="fw-bold fst-italic">
+                                        {{ __('messages.users_list_column_name_text') }}
+                                    </small>
+                                </div>
+                                <div class="col-md-4 col-lg-4 col-xl-4 text-start">
+                                    <small class="fw-bold fst-italic">
+                                        {{ __('messages.users_list_column_email_address_text') }}
+                                    </small>
+                                </div>
+                                <div class="col-md-2 col-lg-2 col-xl-2 text-start">
+                                    <small class="fw-bold fst-italic">
+                                        {{ __('messages.users_list_column_usertype_text') }}
+                                    </small>
+                                </div>
+                                <div class="col-md-2 col-lg-2 col-xl-2 text-end">
+                                    <small class="fw-bold fst-italic">
+                                        {{ __('messages.users_list_column_actions_text') }}
+                                    </small>
+                                </div>
+                            </div>
+                        </li>
+
+                        @forelse($users as $eachUser)
+                            <li id="eachuser_{{ $eachUser->id }}" class="eachuser @if($eachUser->isStatusInactive()) list-group-item-secondary @endif list-group-item border border-app_lblue @if(!$loop->first){{'border-top-0'}}@endif">
+                                <div class="row align-items-md-center">
+                                    <div class="col-12 col-md-4 col-lg-4 col-xl-4 text-start fw-bold text-app_dblue">
+                                        {{ $eachUser->fullName }}
+                                    </div>
+                                    <div class="col-12 col-md-4 col-lg-4 col-xl-43 text-start fw-bold text-app_dblue">
+                                        {{ $eachUser->email }}
+                                    </div>
+                                    <div class="col-6 col-md-2 col-lg-2 col-xl-2 text-start">
+                                        <small class="badge bg-secondary text-white fw-bold">
+                                            {{ $eachUser->getRoleName() }}
+                                        </small>
+                                    </div>
+                                    <div class="col-6 col-md-2 col-lg-2 col-xl-2 text-end">
+                                        @if ($eachUser->isStatusActive())
+                                            <a class="me-1 text-app_dblue deactivate_user" href="JavaScript:void(0);" tabindex="0" style="text-decoration: none;"
+                                                title="{{__('messages.users_list_action_deactivate_tooltip_text')}}" data-bs-toggle="tooltip" id="deactivate_user_{{$eachUser->id}}" >
+                                                <i class="fa-solid fa-circle-check"></i>
+                                            </a>
+                                        @else
+                                            <a class="me-1 text-danger deactivate_user" href="JavaScript:void(0);" tabindex="0" style="text-decoration: none;"
+                                                title="{{__('messages.users_list_action_activate_tooltip_text')}}" data-bs-toggle="tooltip" id="activate_user_{{$eachUser->id}}" >
+                                                <i class="fa-solid fa-circle-xmark"></i>
+                                            </a>
+                                        @endif
+                                        <a class="me-1 text-app_dblue" target="_blank" href="{{ route('users.edit', ['id' => $eachUser->id]) }}" style="text-decoration: none;"
+                                            data-bs-toggle="tooltip"  title="{{__('messages.users_list_action_edit_tooltip_text')}}">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </a>
+                                        <a class="me-1 text-danger delete_user" href="JavaScript:void(0);" tabindex="0" style="text-decoration: none;"
+                                            title="{{__('messages.users_list_action_delete_tooltip_text')}}" data-bs-toggle="tooltip" id="delete_user_{{$eachUser->id}}" >
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </li>
+                        @empty
+                            <li class="list-group-item border border-app_lblue border-left-0 border-right-0 border-app_lblue">
+                                <div class="row g-0">
+                                    <div class="col-12 text-center small">
+                                        <small class="fw-bold">
+                                            {{ __('messages.general_no_results_text') }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </li>
+                        @endforelse
+
+                        @if ($users->hasPages())
+                            <li class="list-group-item border-0">
+                                <div class="row g-0">
+                                    <div class="col-12 text-center">
+                                        {{ $users->links() }}
+                                    </div>
+                                </div>
+                            </li>
+                        @endif
+                    </ul>
+                </div>
+
+                <form action="{{route('users.activate')}}" id="activate_form" name="activate_form" method="POST">
+                    <input type="hidden" name="activate_id" id="activate_id" value="" />
+                    @csrf
+                </form>
+                <form action="{{route('users.deactivate')}}" id="deactivate_form" name="deactivate_form" method="POST">
+                    <input type="hidden" name="deactivate_id" id="deactivate_id" value="" />
+                    @csrf
+                </form>
+                <form action="{{route('users.delete')}}" id="delete_form" name="delete_form" method="POST">
+                    <input type="hidden" name="delete_id" id="delete_id" value="" />
+                    @csrf
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="activateConfirmModal" tabindex="-1" role="dialog" aria-labelledby="activateConfirmModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content border-0">
+            <div class="modal-header text-white bg-danger border-0 py-2 justify-content-center">
+                <h5 class="modal-title font-italic" id="activateConfirmModalTitle">
+                    {{ __('messages.users_list_activate_confirm_modal_title') }}
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="w-100 fw-bold">
+                    {{ __('messages.users_list_activate_confirm_modal_body_text') }}
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-0 justify-content-center">
+                <div class="row w-100 g-1">
+                    <div class="col-10">
+                        <a class="btn btn-app_dblue border-0 w-100" href="JavaScript:void(0);" tabindex="0" style="text-decoration: none;" id="activate_confirm_modal_submit_btn">
+                            {{ __('messages.users_list_activate_confirm_modal_cnf_btn_text') }}
+                        </a>
+                    </div>
+                    <div class="col-2">
+                        <button type="button" class="btn btn-danger border-0 w-100" data-bs-dismiss="modal">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deactivateConfirmModal" tabindex="-1" role="dialog" aria-labelledby="deactivateConfirmModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content border-0">
+            <div class="modal-header text-white bg-danger border-0 py-2 justify-content-center">
+                <h5 class="modal-title font-italic" id="deactivateConfirmModalTitle">
+                    {{ __('messages.users_list_deactivate_confirm_modal_title') }}
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="w-100 fw-bold">
+                    {{ __('messages.users_list_deactivate_confirm_modal_body_text') }}
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-0 justify-content-center">
+                <div class="row w-100 g-1">
+                    <div class="col-10">
+                        <a class="btn btn-app_dblue border-0 w-100" href="JavaScript:void(0);" tabindex="0" style="text-decoration: none;" id="deactivate_confirm_modal_submit_btn">
+                            {{ __('messages.users_list_deactivate_confirm_modal_cnf_btn_text') }}
+                        </a>
+                    </div>
+                    <div class="col-2">
+                        <button type="button" class="btn btn-danger border-0 w-100" data-bs-dismiss="modal">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" role="dialog" aria-labelledby="deleteConfirmModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content border-0">
+            <div class="modal-header text-white bg-danger border-0 py-2 justify-content-center">
+                <h5 class="modal-title font-italic" id="deleteConfirmModalTitle">
+                    {{ __('messages.users_list_delete_confirm_modal_title') }}
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="w-100 fw-bold">
+                    {{ __('messages.users_list_delete_confirm_modal_body_text') }}
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-0 justify-content-center">
+                <div class="row w-100 g-1">
+                    <div class="col-10">
+                        <a class="btn btn-app_dblue border-0 w-100" href="JavaScript:void(0);" tabindex="0" style="text-decoration: none;" id="delete_confirm_modal_submit_btn">
+                            {{ __('messages.users_list_delete_confirm_modal_cnf_btn_text') }}
+                        </a>
+                    </div>
+                    <div class="col-2">
+                        <button type="button" class="btn btn-danger border-0 w-100" data-bs-dismiss="modal">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection

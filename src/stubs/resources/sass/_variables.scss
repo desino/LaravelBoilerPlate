@@ -1,0 +1,94 @@
+@import "~bootstrap/scss/mixins/banner";
+@include bsBanner("");
+
+
+// scss-docs-start import-stack
+// Configuration
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
+
+$body-color: #005487;
+$app_lblue : #00A1DF;
+$app_dblue : #005487;
+$app_mblue : #7FA9C3;
+
+$custom-colors: (
+    "app_lblue": $app_lblue,
+    "app_dblue": $app_dblue,
+    "app_mblue": $app_mblue,
+    'white'    : $white,
+    'black'    : $black,
+);
+$theme-colors: map-merge($theme-colors, $custom-colors);
+$theme-colors-rgb: map-loop($theme-colors, to-rgb, "$value");
+
+$table-variants-custom : (
+    "app_lblue": $app_lblue,
+    "app_dblue": $app_dblue,
+    "app_mblue": $app_mblue,
+);
+$table-variants: map-merge($table-variants, $table-variants-custom);
+
+$tooltip-bg     : #8C8989;
+$tooltip-opacity: 1;
+$enable-rounded              : false;
+$enable-shadows              : true;
+$enable-gradients            : true;
+$enable-responsive-font-sizes: true;
+$input-focus-box-shadow      : 0 0 0;
+
+$link-color        : $app_lblue;
+$table-border-color: $app_lblue;
+$hr-border-color   : $app_lblue;
+$border-color      : $app_lblue;
+$input-border-color      : $app_lblue;
+$input-focus-border-color: $app_mblue;
+$input-color             : $app_dblue;
+$input-plaintext-color   : $app_dblue;
+$input-focus-color       : $app_dblue;
+$input-placeholder-color : $secondary;
+$form-check-input-checked-bg-color : $app_lblue;
+
+@import "~bootstrap/scss/maps";
+@import "~bootstrap/scss/mixins";
+@import "~bootstrap/scss/utilities";
+
+// Layout & components
+@import "~bootstrap/scss/root";
+@import "~bootstrap/scss/reboot";
+@import "~bootstrap/scss/type";
+@import "~bootstrap/scss/images";
+@import "~bootstrap/scss/containers";
+@import "~bootstrap/scss/grid";
+@import "~bootstrap/scss/tables";
+@import "~bootstrap/scss/forms";
+@import "~bootstrap/scss/buttons";
+@import "~bootstrap/scss/transitions";
+@import "~bootstrap/scss/dropdown";
+@import "~bootstrap/scss/button-group";
+@import "~bootstrap/scss/nav";
+@import "~bootstrap/scss/navbar";
+@import "~bootstrap/scss/card";
+@import "~bootstrap/scss/accordion";
+@import "~bootstrap/scss/breadcrumb";
+@import "~bootstrap/scss/pagination";
+@import "~bootstrap/scss/badge";
+@import "~bootstrap/scss/alert";
+@import "~bootstrap/scss/progress";
+@import "~bootstrap/scss/list-group";
+@import "~bootstrap/scss/close";
+@import "~bootstrap/scss/toasts";
+@import "~bootstrap/scss/modal";
+@import "~bootstrap/scss/tooltip";
+@import "~bootstrap/scss/popover";
+@import "~bootstrap/scss/carousel";
+@import "~bootstrap/scss/spinners";
+@import "~bootstrap/scss/offcanvas";
+@import "~bootstrap/scss/placeholders";
+
+// Helpers
+@import "~bootstrap/scss/helpers";
+
+// Utilities
+@import "~bootstrap/scss/utilities/api";
+// scss-docs-end import-stack
