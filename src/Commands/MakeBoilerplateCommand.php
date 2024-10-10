@@ -18,18 +18,31 @@ class MakeBoilerplateCommand extends Command
      */
     public function handle()
     {
+        $this->publishMiddleware();
         $this->publishServices();
         $this->publishProviders();
         $this->publishControllers();
         $this->publishModels();
+        $this->publishMailable();
         $this->publishMigrations();
         $this->publishViews();
-        $this->publishMailable();
-        $this->publishMiddleware();
+        $this->publishRoutes();
         $this->publishTranslations();
 
-        $this->call('config:cache');
+        /*composer require laravel/ui
+        composer require league/csv
+        composer require league/flysystem-sftp-v3
+        .env database connection
+        config/database
+        'charset' => env('DB_CHARSET', 'utf8'),
+        'collation' => env('DB_COLLATION', 'utf8_unicode_ci'),
 
+        php artisan config:cache
+        php artisan migrate
+
+        to bootstrap/providers.php
+        App\Providers\BladeDefaultVariablesServiceProvider::class,
+        */
         $this->info('Desino boilerplate is copied to your application!');
     }
 
@@ -40,7 +53,10 @@ class MakeBoilerplateCommand extends Command
      */
     protected function publishServices()
     {
-        file_put_contents(app_path("/app/Services/AppMiscService.php"), file_get_contents(__DIR__."/../stubs/Services/AppMiscService.stub"));
+        if (!is_dir(app_path("Services/"))) {
+            mkdir(app_path("Services/"), 0755, true);
+        }
+        file_put_contents(app_path("Services/AppMiscService.php"), file_get_contents(__DIR__."/../stubs/app/Services/AppMiscService.stub"));
     }
 
     /**
@@ -50,7 +66,10 @@ class MakeBoilerplateCommand extends Command
      */
     protected function publishProviders()
     {
-        file_put_contents(app_path("/app/Providers/BladeDefaultVariablesServiceProvider.php"), file_get_contents(__DIR__."/../stubs/Providers/BladeDefaultVariablesServiceProvider.stub"));
+        if (!is_dir(app_path("Providers/"))) {
+            mkdir(app_path("Providers/"), 0755, true);
+        }
+        file_put_contents(app_path("Providers/BladeDefaultVariablesServiceProvider.php"), file_get_contents(__DIR__."/../stubs/app/Providers/BladeDefaultVariablesServiceProvider.stub"));
     }
 
     /**
@@ -60,8 +79,19 @@ class MakeBoilerplateCommand extends Command
      */
     protected function publishControllers()
     {
-        file_put_contents(app_path("/app/Http/Controllers/UserController.php"), file_get_contents(__DIR__."/../stubs/Http/Controllers/UserController.stub"));
-        file_put_contents(app_path("/app/Http/Controllers/AppConfigController.php"), file_get_contents(__DIR__."/../stubs/Http/Controllers/AppConfigController.stub"));
+        if (!is_dir(app_path("Http/Controllers/Auth/"))) {
+            mkdir(app_path("Http/Controllers/Auth/"), 0755, true);
+        }
+
+        file_put_contents(app_path("Http/Controllers/HomeController.php"), file_get_contents(__DIR__."/../stubs/app/Http/Controllers/HomeController.stub"));
+        file_put_contents(app_path("Http/Controllers/UserController.php"), file_get_contents(__DIR__."/../stubs/app/Http/Controllers/UserController.stub"));
+        file_put_contents(app_path("Http/Controllers/AppConfigController.php"), file_get_contents(__DIR__."/../stubs/app/Http/Controllers/AppConfigController.stub"));
+        file_put_contents(app_path("Http/Controllers/Auth/ConfirmPasswordController.php"), file_get_contents(__DIR__."/../stubs/app/Http/Controllers/Auth/ConfirmPasswordController.stub"));
+        file_put_contents(app_path("Http/Controllers/Auth/ForgotPasswordController.php"), file_get_contents(__DIR__."/../stubs/app/Http/Controllers/Auth/ForgotPasswordController.stub"));
+        file_put_contents(app_path("Http/Controllers/Auth/LoginController.php"), file_get_contents(__DIR__."/../stubs/app/Http/Controllers/Auth/LoginController.stub"));
+        file_put_contents(app_path("Http/Controllers/Auth/RegisterController.php"), file_get_contents(__DIR__."/../stubs/app/Http/Controllers/Auth/RegisterController.stub"));
+        file_put_contents(app_path("Http/Controllers/Auth/ResetPasswordController.php"), file_get_contents(__DIR__."/../stubs/app/Http/Controllers/Auth/ResetPasswordController.stub"));
+        file_put_contents(app_path("Http/Controllers/Auth/VerificationController.php"), file_get_contents(__DIR__."/../stubs/app/Http/Controllers/Auth/VerificationController.stub"));
     }
 
     /**
@@ -73,34 +103,77 @@ class MakeBoilerplateCommand extends Command
      */
     protected function publishModels()
     {
-        file_put_contents(app_path("/app/Models/User.php"), file_get_contents(__DIR__."/../stubs/Models/User.stub"));
-        file_put_contents(app_path("/app/Models/AppConfig.php"), file_get_contents(__DIR__."/../stubs/Models/AppConfig.stub"));
+        if (!is_dir(app_path("Models/"))) {
+            mkdir(app_path("Models/"), 0755, true);
+        }
+        file_put_contents(app_path("Models/User.php"), file_get_contents(__DIR__."/../stubs/app/Models/User.stub"));
+        file_put_contents(app_path("Models/AppConfig.php"), file_get_contents(__DIR__."/../stubs/app/Models/AppConfig.stub"));
     }
 
+    /**
+     * Publish the migration stub files to the database/migrations directory of the application.
+     *
+     * The migration files are used to create the tables in the database.
+     *
+     * @return void
+     */
     private function publishMigrations()
     {
-        file_put_contents(app_path("/database/migrations/".date('Y_m_d_His')."_adjust_users_table.php"), file_get_contents(__DIR__."/../stubs/database/migrations/adjust_users_table.stub"));
-        file_put_contents(app_path("/database/migrations/".date('Y_m_d_His')."_create_app_configs_table.php"), file_get_contents(__DIR__."/../stubs/database/migrations/create_app_configs_table.stub"));
+        file_put_contents(database_path("migrations/".date('Y_m_d_His')."_adjust_users_table.php"), file_get_contents(__DIR__."/../stubs/database/migrations/adjust_users_table.stub"));
+        file_put_contents(database_path("migrations/".date('Y_m_d_His')."_create_app_configs_table.php"), file_get_contents(__DIR__."/../stubs/database/migrations/create_app_configs_table.stub"));
     }
 
     protected function publishViews()
     {
-        file_put_contents(app_path("/resources/views/welcome.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/welcome.blade.stub"));
-        file_put_contents(app_path("/resources/views/auth/login.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/auth/login.blade.stub"));
-        file_put_contents(app_path("/resources/views/auth/register.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/auth/register.blade.stub"));
-        file_put_contents(app_path("/resources/views/auth/passwords/reset.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/auth/passwords/reset.blade.stub"));
-        file_put_contents(app_path("/resources/views/auth/passwords/email.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/auth/passwords/email.blade.stub"));
-        file_put_contents(app_path("/resources/views/auth/passwords/reset.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/auth/passwords/reset.blade.stub"));
+        if (!is_dir(resource_path("views/layouts/"))) {
+            mkdir(resource_path("views/layouts/"), 0755, true);
+        }
+        if (!is_dir(resource_path("views/auth/"))) {
+            mkdir(resource_path("views/auth/"), 0755, true);
+        }
+        if (!is_dir(resource_path("views/users/"))) {
+            mkdir(resource_path("views/users/"), 0755, true);
+        }
+        if (!is_dir(resource_path("views/auth/passwords/"))) {
+            mkdir(resource_path("views/auth/passwords/"), 0755, true);
+        }
+        if (!is_dir(resource_path("views/emails/"))) {
+            mkdir(resource_path("views/emails/"), 0755, true);
+        }
+        file_put_contents(resource_path("views/layouts/app.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/layouts/app.blade.stub"));
+        file_put_contents(resource_path("views/home.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/home.blade.stub"));
+        file_put_contents(resource_path("views/config.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/config.blade.stub"));
+        file_put_contents(resource_path("views/users/index.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/users/index.blade.stub"));
+        file_put_contents(resource_path("views/users/create.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/users/create.blade.stub"));
+        file_put_contents(resource_path("views/users/edit.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/users/edit.blade.stub"));
+        file_put_contents(resource_path("views/auth/login.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/auth/login.blade.stub"));
+        file_put_contents(resource_path("views/auth/register.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/auth/register.blade.stub"));
+        file_put_contents(resource_path("views/auth/passwords/reset.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/auth/passwords/reset.blade.stub"));
+        file_put_contents(resource_path("views/auth/passwords/email.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/auth/passwords/email.blade.stub"));
+        file_put_contents(resource_path("views/auth/passwords/reset.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/auth/passwords/reset.blade.stub"));
+        file_put_contents(resource_path("views/emails/master.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/emails/master.blade.stub"));
+        file_put_contents(resource_path("views/emails/reset_password.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/emails/reset_password.blade.stub"));
     }
 
     protected function publishMailable()
     {
-        file_put_contents(app_path("/app/Mail/ResetPasswordMail.php"), file_get_contents(__DIR__."/../stubs/Mail/ResetPasswordMail.stub"));
+        if (!is_dir(app_path("Mail/"))) {
+            mkdir(app_path("Mail/"), 0755, true);
+        }
+        file_put_contents(app_path("Mail/ResetPasswordMail.php"), file_get_contents(__DIR__."/../stubs/app/Mail/ResetPasswordMail.stub"));
     }
 
     protected function publishMiddleware()
     {
-        file_put_contents(app_path("/app/Http/Middleware/CheckUserIsActive.php"), file_get_contents(__DIR__."/../stubs/Http/Middleware/CheckUserIsActive.stub"));
+        if (!is_dir(app_path("Http/Middleware/"))) {
+            mkdir(app_path("Http/Middleware/"), 0755, true);
+        }
+        file_put_contents(app_path("Http/Middleware/CheckUserIsActive.php"), file_get_contents(__DIR__."/../stubs/app/Http/Middleware/CheckUserIsActive.stub"));
+    }
+
+    protected function publishRoutes()
+    {
+        file_put_contents(base_path("routes/web.php"), file_get_contents(__DIR__."/../stubs/routes/web.stub"));
     }
 
     /**
@@ -109,7 +182,13 @@ class MakeBoilerplateCommand extends Command
      */
     protected function publishTranslations()
     {
-        file_put_contents(app_path("/lang/en/messages.php"), file_get_contents(__DIR__."/../stubs/lang/en/messages.stub"));
+        if (!is_dir(app_path("lang/"))) {
+            mkdir(app_path("lang/"), 0755, true);
+        }
+        if (!is_dir(app_path("lang/en/"))) {
+            mkdir(app_path("lang/en/"), 0755, true);
+        }
+        file_put_contents(app_path("lang/en/messages.php"), file_get_contents(__DIR__."/../stubs/lang/en/messages.stub"));
     }
 
     /**

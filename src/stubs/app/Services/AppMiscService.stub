@@ -181,7 +181,7 @@ class AppMiscService
 
         return [
             'items_per_page_users' => is_array($config) && array_key_exists('items_per_page_users', $config) ? $config['items_per_page_users'] : 100,
-        ]
+        ];
     }
 
 

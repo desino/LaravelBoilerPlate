@@ -13,17 +13,17 @@ class UserController extends Controller
     private $loggedUser;
 
     /**
-     * Create a new controller instance.
-     *
-     * @return void
+     * Get the middleware that should be assigned to the controller.
      */
-    public function __construct()
+    public static function middleware(): array
     {
-        $this->middleware(function ($request, $next) {
-            $this->loggedUser = \Auth::user();
+        return [
+            function (Request $request, Closure $next) {
+                $this->loggedUser = \Auth::user();
 
-            return $next($request);
-        });
+                return $next($request);
+            },
+        ];
     }
 
     /**

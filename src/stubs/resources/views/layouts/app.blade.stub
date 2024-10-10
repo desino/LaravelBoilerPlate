@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-100">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" />
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="robots" content="noindex, nofollow">
+    <title>@if(isset($page_title)){{ $page_title.' - ' }}@endif {{ config('app.name', trans('messages.application_title')) }}</title>
+    <script rel="stylesheet" src="{{ asset('js/app.min.js') }}"></script>
+    <link href="{{ asset('css/app.min.css') }}" rel="stylesheet">
+    <script type="text/javascript">
+        jQuery(document).ready(function($) {
+            jQuery.ajaxSetup({
+                headers: {
+                    'X-CSRF-Token': jQuery('meta[name="csrf-token"]').attr('content')
+                }
+            });
+
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl, {
+                boundary: 'window'
+            }));
+
+            const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
+            const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
+        });
+
+        const ifObjectHasSameValues = function (obj1, obj2) {
+            const obj1Length = Object.keys(obj1).length;
+            const obj2Length = Object.keys(obj2).length;
+
+            if (obj1Length === obj2Length) {
+                return Object.keys(obj1).every(
+                    key => obj2.hasOwnProperty(key)
+                        && obj2[key] === obj1[key]);
+            }
+            return false;
+        }
+    </script>
+    @stack('linkcss')
+    @stack('scripts')
+    <style type="text/css">
+        #system_navigation a{font-size: 14px;}
+        .header_logo{width: 250px;}
+        @media (max-width: 767.98px) {
+            .header_logo{width: 100%;max-width: 200px;}
+            .navbar-brand{ text-align: center; }
+        }
+        .bootstrap-select .dropdown-toggle:focus, .bootstrap-select>select.mobile-device:focus+.dropdown-toggle{
+            outline: none !important;
+        }
+    </style>
+    @yield('customscss')
+    @stack('javascripts')
+</head>
+<body class="d-flex flex-column h-100" >
+    <header class="shadow-sm bg-app_dblue">
+        <nav id="navbar" class="navbar navbar-expand-xl navbar-light py-0">
+            <div class="container-fluid">
+                <a class="navbar-brand mx-auto" href="{{ route('home') }}" title="{{ config('app.name', trans('messages.application_title')) }}" >
+                    <img src="{{ asset('images/logo.png') }}" class="img-fluid m-2 align-middle header_logo" />
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#system_navigation" aria-controls="system_navigation" aria-expanded="false" >
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="system_navigation">
+                    @guest
+                        <ul class="navbar-nav me-auto">
+
+                        </ul>
+                        <div class="my-2 my-lg-0 align-items-center">
+                            <a role="button" class="btn btn-dark border-0 ms-1 d-block" href="{{ route('login') }}"
+                                data-bs-toggle="tooltip"  title="{{ trans('messages.login_text') }}" >
+                                <i class="fas fa-key text-white"></i>
+                            </a>
+                        </div>
+                    @else
+                        <ul class="navbar-nav me-xl-auto mx-3 text-center text-xl-start">
+                            @if(in_array($loggedUser->getRole(), [\App\Models\User::getRoleAdmin()]))
+                                <li class="nav-item">
+                                    <a class="fw-bold nav-link @if(in_array($currentRouteName, ['users.index', 'users.create', 'users.edit'])){{'active'}}@else{{ 'text-white' }}@endif" href="{{ route('users.index') }}">
+                                        {{ trans('messages.main_menu_users_title') }}
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="fw-bold nav-link @if($currentRouteName == 'appconfig.config'){{'active'}}@else{{ 'text-white' }}@endif" href="{{ route('appconfig.config') }}">
+                                        {{ trans('messages.main_menu_appconfig_title') }}
+                                    </a>
+                                </li>
+                            @endif
+                        </ul>
+                        <div class="my-2 my-xl-0 align-items-center">
+                            <a role="button" class="btn btn-dark border-0 d-block mb-1" href="{{ route('logout') }}"
+                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+                                data-bs-toggle="tooltip"  title="{{ trans('messages.logout_text') }}" >
+                                <i class="fas fa-power-off"></i>
+                            </a>
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                                @csrf
+                            </form>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main role="main" class="flex-shrink-0 @if($breadcrumbs->count() > 0) {{ 'mb-5' }} @else {{ 'my-5' }} @endif" id="content_main">
+        <div class="@if(empty($containerfluid)){{'container'}}@else{{'container-fluid'}}@endif">
+            <div id="breadcrumbs" class="row">
+                @if ($breadcrumbs->count() > 0)
+                    <div class="col-12 my-2">
+                        @foreach ($breadcrumbs as $eachBreadcrumb)
+                            <span class="{{ $eachBreadcrumb['class'] }}">
+                                @if ($eachBreadcrumb['link'] != null)
+                                    <a href="{{ $eachBreadcrumb['link'] }}" class="{{ $eachBreadcrumb['link_class'] }}" style="text-decoration: none;">
+                                @endif
+                                    {{ $eachBreadcrumb['text'] }}
+                                @if ($eachBreadcrumb['link'] != null)
+                                    </a>
+                                @endif
+                            </span>
+                            @if (! $loop->last)
+                                <span class="mx-1">
+                                    {{ __('/') }}
+                                </span>
+                            @endif
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+            <div id="system_message" class="row">
+                <div class="col-12">
+                    @if (session('status'))
+                        <div class="alert alert-success alert-dismissible my-3 text-start" role="alert">
+                            <div class="w-100">{!! session('status') !!}</div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    @endif
+
+                    @if (Session::has('sys_messages'))
+                        @php $sys_messages = Session::get('sys_messages'); @endphp
+                        @foreach ($sys_messages as $message_type => $messages)
+                            @if (is_array($messages) && count($messages) > 0)
+                                <div class="alert alert-{{$message_type}} my-3 text-start alert-dismissible" role="alert">
+                                    @foreach ($messages as $key => $each_message)
+                                        <div class="w-100">{!!$each_message!!}</div>
+                                    @endforeach
+                                    <button type="button"class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            @endif
+                        @endforeach
+                        @php Session::forget('sys_messages'); @endphp
+                    @endif
+                </div>
+            </div>
+            <div id="content_cover" class="row">
+                <div id="content_cover_cl" class="col-12">
+                    @yield('content')
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer mt-auto py-2 bg-app_dblue">
+        <p class="text-center my-2 text-white">
+            {!! trans('messages.copywrite_text', ['year' => today()->format('Y')]) !!}
+        </p>
+    </footer>
+
+    <div id="loading_screen">
+        <img src="{{ asset('images/loading.svg') }}" />
+    </div>
+    @yield('customscript')
+</body>
+</html>
