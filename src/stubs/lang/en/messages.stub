@@ -68,6 +68,7 @@ return [
      */
     'main_menu_home_title'   => 'Home',
     'main_menu_users_title'  => 'Gebruikers',
+    'main_menu_appconfig_title' => 'Configuratie',
     'guest_menu_login_title' => 'Login',
     'user_menu_logout_title' => 'Logout',
     /**

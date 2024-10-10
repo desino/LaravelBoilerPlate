@@ -192,13 +192,13 @@ class MakeBoilerplateCommand extends Command
      */
     protected function publishTranslations()
     {
-        if (!is_dir(app_path("lang/"))) {
-            mkdir(app_path("lang/"), 0755, true);
+        if (!is_dir(lang_path())) {
+            mkdir(base_path("lang/"), 0755, true);
         }
-        if (!is_dir(app_path("lang/en/"))) {
-            mkdir(app_path("lang/en/"), 0755, true);
+        if (!is_dir(lang_path("en/"))) {
+            mkdir(lang_path("en/"), 0755, true);
         }
-        file_put_contents(app_path("lang/en/messages.php"), file_get_contents(__DIR__."/../stubs/lang/en/messages.stub"));
+        file_put_contents(lang_path("en/messages.php"), file_get_contents(__DIR__."/../stubs/lang/en/messages.stub"));
     }
 
     /**
