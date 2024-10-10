@@ -2,7 +2,10 @@
 
 namespace Desino\Boilerplate\Commands;
 
+use Illuminate\Support\Str;
 use Illuminate\Console\Command;
+use Illuminate\Filesystem\Filesystem;
+use Symfony\Component\Finder\SplFileInfo;
 
 class MakeBoilerplateCommand extends Command
 {
@@ -32,7 +35,9 @@ class MakeBoilerplateCommand extends Command
         /*composer require laravel/ui
         composer require league/csv
         composer require league/flysystem-sftp-v3
+
         .env database connection
+
         config/database
         'charset' => env('DB_CHARSET', 'utf8'),
         'collation' => env('DB_COLLATION', 'utf8_unicode_ci'),
@@ -79,19 +84,24 @@ class MakeBoilerplateCommand extends Command
      */
     protected function publishControllers()
     {
-        if (!is_dir(app_path("Http/Controllers/Auth/"))) {
-            mkdir(app_path("Http/Controllers/Auth/"), 0755, true);
+        if (! is_dir($directory = app_path('Http/Controllers/Auth'))) {
+            mkdir($directory, 0755, true);
         }
 
+        $filesystem = new Filesystem;
+
+        collect($filesystem->allFiles(__DIR__.'/../stubs/app/Http/Controllers/Auth/'))
+            ->each(function (SplFileInfo $file) use ($filesystem) {
+                $filesystem->copy(
+                    $file->getPathname(),
+                    app_path('Http/Controllers/Auth/'.Str::replaceLast('.stub', '.php', $file->getFilename()))
+                );
+            });
+
+        file_put_contents(app_path("Http/Controllers/Controller.php"), file_get_contents(__DIR__."/../stubs/app/Http/Controllers/Controller.stub"));
         file_put_contents(app_path("Http/Controllers/HomeController.php"), file_get_contents(__DIR__."/../stubs/app/Http/Controllers/HomeController.stub"));
         file_put_contents(app_path("Http/Controllers/UserController.php"), file_get_contents(__DIR__."/../stubs/app/Http/Controllers/UserController.stub"));
         file_put_contents(app_path("Http/Controllers/AppConfigController.php"), file_get_contents(__DIR__."/../stubs/app/Http/Controllers/AppConfigController.stub"));
-        file_put_contents(app_path("Http/Controllers/Auth/ConfirmPasswordController.php"), file_get_contents(__DIR__."/../stubs/app/Http/Controllers/Auth/ConfirmPasswordController.stub"));
-        file_put_contents(app_path("Http/Controllers/Auth/ForgotPasswordController.php"), file_get_contents(__DIR__."/../stubs/app/Http/Controllers/Auth/ForgotPasswordController.stub"));
-        file_put_contents(app_path("Http/Controllers/Auth/LoginController.php"), file_get_contents(__DIR__."/../stubs/app/Http/Controllers/Auth/LoginController.stub"));
-        file_put_contents(app_path("Http/Controllers/Auth/RegisterController.php"), file_get_contents(__DIR__."/../stubs/app/Http/Controllers/Auth/RegisterController.stub"));
-        file_put_contents(app_path("Http/Controllers/Auth/ResetPasswordController.php"), file_get_contents(__DIR__."/../stubs/app/Http/Controllers/Auth/ResetPasswordController.stub"));
-        file_put_contents(app_path("Http/Controllers/Auth/VerificationController.php"), file_get_contents(__DIR__."/../stubs/app/Http/Controllers/Auth/VerificationController.stub"));
     }
 
     /**
