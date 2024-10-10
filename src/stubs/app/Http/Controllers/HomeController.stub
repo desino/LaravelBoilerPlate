@@ -10,17 +10,17 @@ class HomeController extends Controller
     private $loggedUser;
 
     /**
-     * Get the middleware that should be assigned to the controller.
+     * Create a new controller instance.
+     *
+     * @return void
      */
-    public static function middleware(): array
+    public function __construct()
     {
-        return [
-            function (Request $request, Closure $next) {
-                $this->loggedUser = \Auth::user();
+        $this->middleware(function ($request, $next) {
+            $this->loggedUser = \Auth::user();
 
-                return $next($request);
-            },
-        ];
+            return $next($request);
+        });
     }
 
     /**
