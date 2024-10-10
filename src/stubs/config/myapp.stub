@@ -1,5 +1,5 @@
 <?php
 
 return [
-
+    'myapp_force_https ' => env('MYAPP_FORCE_HTTPS', false),
 ];
