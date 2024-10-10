@@ -135,34 +135,63 @@ class MakeBoilerplateCommand extends Command
 
     protected function publishViews()
     {
-        if (!is_dir(resource_path("views/layouts/"))) {
-            mkdir(resource_path("views/layouts/"), 0755, true);
+        if (! is_dir($directory = resource_path("views/layouts/"))) {
+            mkdir($directory, 0755, true);
         }
-        if (!is_dir(resource_path("views/auth/"))) {
-            mkdir(resource_path("views/auth/"), 0755, true);
+        if (! is_dir($directory = resource_path("views/auth/"))) {
+            mkdir($directory, 0755, true);
         }
-        if (!is_dir(resource_path("views/users/"))) {
-            mkdir(resource_path("views/users/"), 0755, true);
+        if (! is_dir($directory = resource_path("views/auth/passwords/"))) {
+            mkdir($directory, 0755, true);
         }
-        if (!is_dir(resource_path("views/auth/passwords/"))) {
-            mkdir(resource_path("views/auth/passwords/"), 0755, true);
+        if (! is_dir($directory = resource_path("views/users/"))) {
+            mkdir($directory, 0755, true);
         }
-        if (!is_dir(resource_path("views/emails/"))) {
-            mkdir(resource_path("views/emails/"), 0755, true);
+        if (! is_dir($directory = resource_path("views/emails/"))) {
+            mkdir($directory, 0755, true);
         }
+        if (! is_dir($directory = resource_path("views/vendor/"))) {
+            mkdir($directory, 0755, true);
+        }
+        if (! is_dir($directory = resource_path("views/vendor/pagination/"))) {
+            mkdir($directory, 0755, true);
+        }
+
+        $filesystem = new Filesystem;
+
+        collect($filesystem->allFiles(__DIR__.'/../stubs/resources/views/users'))
+            ->each(function (SplFileInfo $file) use ($filesystem) {
+                $filesystem->copy(
+                    $file->getPathname(),
+                    resource_path('views/users/'.Str::replaceLast('.stub', '.php', $file->getFilename()))
+                );
+            });
+
+        collect($filesystem->allFiles(__DIR__.'/../stubs/resources/views/emails'))
+            ->each(function (SplFileInfo $file) use ($filesystem) {
+                $filesystem->copy(
+                    $file->getPathname(),
+                    resource_path('views/emails/'.Str::replaceLast('.stub', '.php', $file->getFilename()))
+                );
+            });
+
+        collect($filesystem->allFiles(__DIR__.'/../stubs/resources/views/vendor/pagination'))
+            ->each(function (SplFileInfo $file) use ($filesystem) {
+                $filesystem->copy(
+                    $file->getPathname(),
+                    resource_path('views/vendor/pagination/'.Str::replaceLast('.stub', '.php', $file->getFilename()))
+                );
+            });
+        
         file_put_contents(resource_path("views/layouts/app.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/layouts/app.blade.stub"));
         file_put_contents(resource_path("views/home.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/home.blade.stub"));
         file_put_contents(resource_path("views/config.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/config.blade.stub"));
-        file_put_contents(resource_path("views/users/index.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/users/index.blade.stub"));
-        file_put_contents(resource_path("views/users/create.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/users/create.blade.stub"));
-        file_put_contents(resource_path("views/users/edit.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/users/edit.blade.stub"));
+        
         file_put_contents(resource_path("views/auth/login.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/auth/login.blade.stub"));
         file_put_contents(resource_path("views/auth/register.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/auth/register.blade.stub"));
         file_put_contents(resource_path("views/auth/passwords/reset.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/auth/passwords/reset.blade.stub"));
         file_put_contents(resource_path("views/auth/passwords/email.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/auth/passwords/email.blade.stub"));
         file_put_contents(resource_path("views/auth/passwords/reset.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/auth/passwords/reset.blade.stub"));
-        file_put_contents(resource_path("views/emails/master.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/emails/master.blade.stub"));
-        file_put_contents(resource_path("views/emails/reset_password.blade.php"), file_get_contents(__DIR__."/../stubs/resources/views/emails/reset_password.blade.stub"));
     }
 
     protected function publishMailable()
